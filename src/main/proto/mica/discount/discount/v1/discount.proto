@@ -1,0 +1,512 @@
+// Copyright (c) 2022 Mica, Inc. All rights reserved. All software, including, without limitation, all source
+// code and object code, is the intellectual property of Mica, Inc. and is protected by copyright, trademark and
+// other intellectual property laws (collective "Mica Software"). You may not use, copy, reproduce, download, store,
+// post, broadcast, transmit, modify, sell or make available to the public content from the Mica Software without a
+// valid license or the prior written approval of Mica, Inc. Mica, its logos, slogans, taglines,
+// products, feature names, and other trademarks are trademarks of Mica, Inc. and may not be used without
+// permission.
+
+syntax = "proto3";
+
+package mica.discount.discount.v1;
+
+import "google/protobuf/timestamp.proto";
+import "micashared/common/enums/approvaltype/v1/approval_type.proto";
+import "micashared/common/enums/currency/v1/currency.proto";
+import "micashared/common/enums/discounttype/v1/discount_type.proto";
+import "micashared/common/enums/unit/v1/unit.proto";
+import "micashared/common/v1/address.proto";
+import "micashared/common/v1/error.proto";
+import "micashared/common/v1/line_item.proto";
+import "validate/validate.proto";
+
+option go_package = "mica/discount/discountv1";
+option java_outer_classname = "DiscountProto";
+option java_package = "io.mica.discount.discount.v1";
+option objc_class_prefix = "MICA";
+
+message TransactionDetails {
+  micashared.common.enums.approvaltype.v1.ApprovalType approval_type = 1;
+
+  // Mica's transaction record primary key.
+  string transaction_key = 2 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  string partner_key = 3 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  string partner_name = 4 [(validate.rules).string = {
+    min_len:  1,
+    max_len: 100
+  }];
+
+  string organization_key = 5 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  string organization_name = 6;
+
+  micashared.common.v1.Address organization_address = 7;
+
+  string store_key = 9 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  string store_number = 10;
+
+  micashared.common.v1.Address store_address = 11;
+
+  repeated micashared.common.v1.LineItem line_items = 12 [(validate.rules).repeated.min_items = 1];
+}
+
+message Discount {
+  string discount_definition_key = 1 [(validate.rules).string = {
+    min_len: 27,
+    max_len: 50
+  }];
+
+  string discount_definition_ref = 2 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 50
+  }];
+
+  string discount_key = 3 [(validate.rules).string = {
+    min_len: 27,
+    max_len: 50
+  }];
+
+  int32 discount_version = 23;
+
+  int64 version = 4 [(validate.rules).int64.gte = 0];
+
+  google.protobuf.Timestamp created = 5;
+
+  google.protobuf.Timestamp updated = 6;
+
+  string discount_ref = 7 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 50
+  }];
+
+  // human readable description for a given discount that can be shown to the end user
+  string headline = 20 [(validate.rules).string.max_len = 100];
+
+  // human readable description for a given discount that can be shown to the end user
+  string summary = 21 [(validate.rules).string.max_len = 300];
+
+  // address to the image for this discount definition (note that this image is expected to be square)
+  string thumbnail_url = 22 [(validate.rules).string.max_len = 300];
+
+  string receipt_description = 8 [(validate.rules).string.max_len = 100];
+
+  DiscountStatus status = 9;
+
+  micashared.common.enums.discounttype.v1.DiscountType type = 10;
+
+  google.protobuf.Timestamp valid_from = 11 [(validate.rules).timestamp.required = false];
+
+  google.protobuf.Timestamp valid_to = 12 [(validate.rules).timestamp = {
+    required: false,
+    gt_now: true
+  }];
+
+  // the basket must include items that match each of the criteria (i.e. it's an and operation) in order for this
+  // discount to apply
+  repeated DiscountCriteria discount_criteria = 13;
+
+  micashared.common.enums.currency.v1.Currency currency = 14;
+
+  string user_key = 15 [(validate.rules).string = {
+    min_len: 27,
+    max_len: 50
+  }];
+
+  string user_ref = 16 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 50
+  }];
+
+  oneof discount_amount {
+    MonetaryAmount monetary_amount = 17;
+    PercentageAmount percentage_amount = 18;
+  }
+
+  TransactionDetails transaction_details = 19;
+}
+
+enum DiscountStatus {
+  DISCOUNT_STATUS_UNSPECIFIED = 0;
+
+  DISCOUNT_STATUS_AVAILABLE = 1;
+
+  // transitory status set by Mica when a discount would apply during transaction processing.
+  DISCOUNT_STATUS_HOLD = 2;
+
+  // set by the discount provider
+  DISCOUNT_STATUS_SUSPENDED = 3;
+
+  DISCOUNT_STATUS_USED = 4;
+
+  DISCOUNT_STATUS_CLOSED = 5;
+}
+
+message Quantity {
+  // an integer or decimal number
+  string quantity = 1;
+
+  micashared.common.enums.unit.v1.Unit unit = 2;
+}
+
+message DiscountCriteria {
+  Quantity quantity = 1;
+
+  MonetaryAmount monetary_amount = 2;
+
+  // indicates that this criteria is used to determine how much value to apply to these items
+  bool discount_amount_applicable = 3;
+
+  repeated string product_group_refs = 4 [(validate.rules).repeated.max_items = 100];
+
+  repeated string product_match_filters = 5 [(validate.rules).repeated.max_items = 100];
+
+  // list of product codes of which the basket must include at least one in this list (i.e. it's an or operation)
+  repeated string product_codes = 6 [(validate.rules).repeated.max_items = 100];
+}
+
+message MonetaryAmount {
+  // must be a monetary amount (e.g. 0.34)
+  string amount = 1;
+
+  string tax_amount = 2;
+}
+
+message PercentageAmount {
+  // must be a percentage (50.3%)
+  string percentage_amount = 1;
+
+  string percentage_tax_amount = 2;
+
+  // must be a monetary amount (e.g. 0.34)
+  MonetaryAmount max_amount = 3;
+}
+
+message CreateDiscountRequest {
+  string discount_definition_ref = 1 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 50
+  }];
+
+  string discount_ref = 2 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 50
+  }];
+
+  string receipt_description = 3 [(validate.rules).string.max_len = 100];
+
+  //the intial status of the discount has to be set and it cannot be unspecified
+  DiscountStatus status = 4 [(validate.rules).enum = {not_in: [0]}];
+
+  google.protobuf.Timestamp valid_from = 5 [(validate.rules).timestamp.required = false];
+
+  google.protobuf.Timestamp valid_to = 6 [(validate.rules).timestamp = {
+    required: false,
+    gt_now: true
+  }];
+
+  // the basket must include items that match each of the criteria (i.e. it's an and operation) in order for this
+  // discount to apply
+  repeated DiscountCriteria discount_criteria = 7;
+
+  string user_key = 8 [(validate.rules).string = {
+    min_len: 27,
+    max_len: 50
+  }];
+
+  string user_ref = 9 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 50
+  }];
+
+  oneof discount_amount {
+    MonetaryAmount monetary_amount = 10;
+    PercentageAmount percentage_amount = 11;
+  }
+}
+
+message CreateDiscountResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  string discount_key = 3;
+
+  int32 discount_version = 5;
+
+  int64 version = 4 [(validate.rules).int64.gte = 0];
+}
+
+message GetDiscountRequest {
+  oneof discount_identifier {
+    string discount_ref = 1 [(validate.rules).string = {
+      min_len: 1,
+      max_len: 50
+    }];
+
+    string discount_key = 2 [(validate.rules).string = {
+      min_len: 27,
+      max_len: 50
+    }];
+  }
+}
+
+message GetDiscountResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+    STATUS_NOT_FOUND = 3;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  Discount discount = 3;
+}
+
+message UpdateDiscountRequest {
+  oneof discount_identifier {
+    string discount_ref = 1 [(validate.rules).string = {
+      min_len: 1,
+      max_len: 50
+    }];
+
+    string discount_key = 12 [(validate.rules).string = {
+      min_len: 27,
+      max_len: 50
+    }];
+  }
+
+  int64 version = 2 [(validate.rules).int64.gte = 0];
+
+  string receipt_description = 3 [(validate.rules).string.max_len = 100];
+
+  // the update status of the discount has to be set and it cannot be unspecified
+  DiscountStatus status = 4 [(validate.rules).enum = {not_in: [0]}];
+
+  google.protobuf.Timestamp valid_from = 5 [(validate.rules).timestamp.required = false];
+
+  google.protobuf.Timestamp valid_to = 6 [(validate.rules).timestamp = {
+    required: false,
+    gt_now: true
+  }];
+
+  // the basket must include items that match each of the criteria (i.e. it's an and operation) in order for this
+  // discount to apply
+  repeated DiscountCriteria discount_criteria = 7;
+
+  string user_key = 8;
+
+  string user_ref = 9 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 50
+  }];
+
+  oneof discount_amount {
+    MonetaryAmount monetary_amount = 10;
+    PercentageAmount percentage_amount = 11;
+  }
+}
+
+message UpdateDiscountResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+    STATUS_NOT_FOUND = 3;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  int64 version = 3 [(validate.rules).int64.gte = 0];
+}
+
+message UpdateDiscountStatusRequest {
+  oneof discount_identifier {
+    string discount_ref = 1 [(validate.rules).string = {
+      min_len: 1,
+      max_len: 50
+    }];
+
+    string discount_key = 3 [(validate.rules).string = {
+      min_len: 27,
+      max_len: 50
+    }];
+  }
+
+  DiscountStatus discount_status = 2 [(validate.rules).enum.not_in = 0];
+}
+
+message UpdateDiscountStatusResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+    STATUS_NOT_FOUND = 3;
+    STATUS_INVALID_STATE_TRANSITION = 4;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  int64 version = 3 [(validate.rules).int64.gte = 0];
+}
+
+message RemoveDiscountRequest {
+  oneof discount_identifier {
+    string discount_ref = 1 [(validate.rules).string = {
+      min_len: 1,
+      max_len: 50
+    }];
+
+    string discount_key = 2 [(validate.rules).string = {
+      min_len: 27,
+      max_len: 50
+    }];
+  }
+}
+
+message RemoveDiscountResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+    STATUS_NOT_FOUND = 3;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+}
+
+message ApplyDiscountNotificationRequest {
+  // discount details
+  string discount_key = 1 [(validate.rules).string = {
+    min_len: 27,
+    max_len: 50
+  }];
+
+  string discount_ref = 2 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 50
+  }];
+
+  int32 discount_version = 23;
+
+  DiscountStatus status = 3; // only USED supported initially
+
+  micashared.common.enums.currency.v1.Currency currency = 4;
+
+  MonetaryAmount monetary_amount = 5;
+
+  // transaction details
+  string transaction_key = 10 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  google.protobuf.Timestamp transaction_created = 11; // Timestamp when discount was applied
+
+  string partner_key = 13 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  string partner_name = 14 [(validate.rules).string = {
+    min_len:  1,
+    max_len: 100
+  }];
+
+  string organization_key = 15 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  string organization_name = 16 [(validate.rules).string.max_len = 100];
+
+  micashared.common.v1.Address organization_address = 17;
+
+  string store_key = 19 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  string store_number = 20;
+
+  micashared.common.v1.Address store_address = 21;
+
+  // string federated_user_key = 22;
+
+  repeated micashared.common.v1.LineItem line_items = 22;
+}
+
+message ApplyDiscountNotificationResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+    STATUS_NOT_FOUND = 3;
+    STATUS_INVALID_STATUS = 4; // unexpected status
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  // TODO(kuchlein): determine if we want to have an identifier passed back. I'm leaning towards not
+  string external_ref = 3 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 50
+  }];
+}
+
+message SearchDiscountRequest {
+  string discount_definition_ref = 2;
+
+  string receipt_description = 3;
+
+  DiscountStatus status = 4;
+
+  micashared.common.enums.discounttype.v1.DiscountType type = 5;
+
+  google.protobuf.Timestamp valid_from = 6;
+
+  google.protobuf.Timestamp valid_to = 7;
+
+  micashared.common.enums.currency.v1.Currency currency = 8;
+
+  string user_ref = 9;
+}
+
+message SearchDiscountResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+    STATUS_NOT_FOUND = 3;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  repeated Discount discounts = 3;
+}

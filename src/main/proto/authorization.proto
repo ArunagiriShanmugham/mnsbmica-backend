@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package bank.venu.mica;
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+import "micashared/common/enums/approvaltype/v1/approval_type.proto";
+import "micashared/common/v1/error.proto";
+import "validate/validate.proto";
+import "mica/serviceprovider/value/v1/value.proto";
+
+
+service PaymentAuthorizationService{
+
+  rpc authorizePayment(.mica.serviceprovider.value.v1.ObtainValueRequest) returns (.mica.serviceprovider.value.v1.ObtainValueResponse);
+
+}
+
+
+
+
+
+
+
+
+
+

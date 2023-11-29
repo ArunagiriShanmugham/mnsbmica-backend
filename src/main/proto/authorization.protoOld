@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package bank.venu.mica;
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+import "micashared/common/enums/approvaltype/v1/approval_type.proto";
+import "mica/serviceprovider/value/v1/value.proto";
+import "micashared/common/v1/error.proto";
+import "validate/validate.proto";
+
+service PaymentAuthorizationService{
+  rpc authorizePayment(ObtainValueRequest) returns (ObtainValueResponse);
+}
+
+message ValueRequest {
+  // Mica's transaction record primary key.
+  string transaction_key = 1 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+}
+
+message ObtainValueRequest {
+  micashared.common.enums.approvaltype.v1.ApprovalType approval_type = 1;
+  ValueRequest value = 2;
+}
+
+
+
+message ObtainValueResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    // An approval for the full amount
+    STATUS_FULL_APPROVAL = 1;
+    // An error occurred when processing the request
+    STATUS_ERROR = 2;
+    // An approval was given for a partial amount
+    STATUS_PARTIAL_APPROVAL = 3;
+    // User instrument doesn't have sufficient value to cover the transaction
+    STATUS_INSUFFICIENT_VALUE = 4;
+    // When all products are either ineligible or age restricted
+    STATUS_INELIGIBLE_PRODUCTS = 5;
+    // Instrument/account not found
+    STATUS_NOT_FOUND = 6;
+    // User instrument is closed
+    STATUS_INSTRUMENT_CLOSED = 7;
+    // Request triggered a transactional risk or fraud check resulting in a decline
+    STATUS_TRANSACTION_RISK_FRAUD = 8;
+    // Request triggered a bad actor risk or fraud check resulting in a decline
+    STATUS_BAD_ACTOR_RISK_FRAUD = 16;
+    // Request triggered a user-based risk or fraud check resulting in a decline
+    STATUS_USER_RISK_FRAUD = 17;
+    // Request triggered a instrument-based risk or fraud check resulting in a decline
+    STATUS_INSTRUMENT_RISK_FRAUD = 18;
+    // The user needs to call the Service Provider to resolve an issue
+    STATUS_USER_CALL_SERVICE_PROVIDER = 9;
+    // The operation isn't supported by the Service Provider
+    STATUS_UNSUPPORTED = 10;
+    // The Service Provider is temporarily unavailable
+    STATUS_SERVICE_PROVIDER_UNAVAILABLE = 11;
+    // The UUEK sent is invalid or not found
+    STATUS_INVALID_UUEK = 12;
+    // A valid PIN is required for this transaction
+    STATUS_PIN_REQUIRED = 13;
+    // Request resulted in one or more limits being exceeded at the Service Provider
+    STATUS_LIMIT_EXCEEDED = 19;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  string transaction_ref = 3;
+
+  // Amount expressed as: [+-]?([0-9]*[.])?[0-9]+
+  string approved_amount = 4;
+}
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,75 @@
+// Copyright (c) 2022 Mica. All rights reserved. All software, including, without limitation, all source
+// code and object code, is the intellectual property of Mica, Inc. and is protected by copyright, trademark and
+// other intellectual property laws (collective "Mica Software"). You may not use, copy, reproduce, download, store,
+// post, broadcast, transmit, modify, sell or make available to the public content from the Mica Software without a
+// valid license or the prior written approval of Mica, Inc. Mica, its logos, slogans, taglines,
+// products, feature names, and other trademarks are trademarks of Mica, Inc. and may not be used without
+// permission.
+
+syntax = "proto3";
+
+package mica.serviceprovider.administration.v1;
+
+import "micashared/common/ping/v1/ping.proto";
+import "micashared/common/v1/console_user.proto";
+import "micashared/common/v1/external_client.proto";
+import "micashared/common/v1/mtls_certificate.proto";
+
+import "validate/validate.proto";
+
+option go_package = "mica/serviceprovider/administrationv1";
+option java_outer_classname = "AdministrationService";
+option java_package = "io.mica.serviceprovider.administration.v1";
+option objc_class_prefix = "MICA";
+
+// This is the administrative interface for a Service Provider member
+service ServiceProviderAdministrationService {
+  //  Generate a new MTLS certificate.
+  rpc GenerateMTLSCertificate(micashared.common.v1.GenerateMTLSCertificateRequest) returns (micashared.common.v1.GenerateMTLSCertificateResponse) {}
+
+  // Update the certificate with a given serial number, only supports enable/disable for now
+  rpc UpdateMTLSCertificate(micashared.common.v1.UpdateMTLSCertificateRequest) returns (micashared.common.v1.UpdateMTLSCertificateResponse) {}
+
+  //Search for certificates and return the ones that match the criteria provided
+  rpc SearchMTLSCertificate(micashared.common.v1.SearchMTLSCertificateRequest) returns (micashared.common.v1.SearchMTLSCertificateResponse) {}
+
+  rpc GetMTLSCertificate(micashared.common.v1.GetMTLSCertificateRequest) returns (micashared.common.v1.GetMTLSCertificateResponse) {}
+
+  rpc CreateSingleSignOnConsoleUser(micashared.common.v1.CreateSingleSignOnConsoleUserRequest) returns (micashared.common.v1.CreateSingleSignOnConsoleUserResponse) {}
+
+  rpc UpdateSingleSignOnConsoleUser(micashared.common.v1.UpdateSingleSignOnConsoleUserRequest) returns (micashared.common.v1.UpdateSingleSignOnConsoleUserResponse) {}
+
+  rpc SearchSingleSignOnUser(micashared.common.v1.SearchSingleSignOnConsoleUserRequest) returns (micashared.common.v1.SearchSingleSignOnConsoleUserResponse) {}
+
+  rpc GetSingleSignOnConsoleUser(micashared.common.v1.GetSingleSignOnConsoleUserRequest) returns (micashared.common.v1.GetSingleSignOnConsoleUserResponse) {}
+
+  // External authentication mechanisms for Mica to call provider endpoints
+  rpc GetExternalClientSettings(micashared.common.v1.GetExternalClientSettingsRequest) returns (micashared.common.v1.GetExternalClientSettingsResponse) {}
+
+  rpc UpdateExternalClientCallbackAddress(micashared.common.v1.UpdateExternalClientCallBackAddressRequest) returns (micashared.common.v1.UpdateExternalClientCallBackAddressResponse) {}
+
+  // Client certificates are used when mica needs to call out to a customers environment.
+  rpc GenerateExternalClientMTLSCertificate(micashared.common.v1.GenerateExternalClientMTLSCertificateRequest) returns (micashared.common.v1.GenerateExternalClientMTLSCertificateResponse) {}
+
+  rpc UpdateExternalClientMTLSCertificate(micashared.common.v1.UpdateExternalClientMTLSCertificateRequest) returns (micashared.common.v1.UpdateExternalClientMTLSCertificateResponse) {}
+
+  rpc SearchExternalClientMTLSCertificate(micashared.common.v1.SearchExternalClientMTLSCertificateRequest) returns (micashared.common.v1.SearchExternalClientMTLSCertificateResponse) {}
+
+  // tests the external call to verify proper configuration and connectivity
+  rpc PingExternal(micashared.common.ping.v1.PingRequest) returns (micashared.common.ping.v1.PingResponse) {}
+
+  rpc PingExternalWithCertificate(PingExternalWithCertificateRequest) returns (PingExternalWithCertificateResponse) {}
+}
+
+
+message PingExternalWithCertificateRequest {
+  string certificate_ref_key = 1 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+}
+
+message PingExternalWithCertificateResponse {
+  string certificate_ref_key = 1;
+  micashared.common.ping.v1.PingResponse response = 2;
+}

@@ -1,0 +1,291 @@
+// Copyright (c) 2022 Mica. All rights reserved. All software, including, without limitation, all source
+// code and object code, is the intellectual property of Mica, Inc. and is protected by copyright, trademark and
+// other intellectual property laws (collective "Mica Software"). You may not use, copy, reproduce, download, store,
+// post, broadcast, transmit, modify, sell or make available to the public content from the Mica Software without a
+// valid license or the prior written approval of Mica, Inc. Mica, its logos, slogans, taglines,
+// products, feature names, and other trademarks are trademarks of Mica, Inc. and may not be used without
+// permission.
+
+syntax = "proto3";
+
+package mica.serviceprovider.instrument.v1;
+
+import "google/protobuf/timestamp.proto";
+import "micashared/common/enums/currency/v1/currency.proto";
+import "micashared/common/enums/instrumenttype/v1/instrument_type.proto";
+import "micashared/common/v1/error.proto";
+import "validate/validate.proto";
+
+option go_package = "mica/serviceprovider/instrumentv1";
+option java_outer_classname = "InstrumentProto";
+option java_package = "io.mica.serviceprovider.instrument.v1";
+option objc_class_prefix = "MICA";
+
+message RegisterInstrumentRequest {
+  // The key representing this user in Mica.
+  string service_provider_user_key = 1 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  // Primary key on the external system.
+  string service_provider_instrument_ref = 2;
+
+  micashared.common.enums.instrumenttype.v1.InstrumentType instrument_type = 3;
+
+  // The 3-letter currency code defined in ISO 4217.
+  micashared.common.enums.currency.v1.Currency currency = 4;
+
+  // Last 4 digits of this instrument.
+  string nickname = 5;
+}
+
+message Transaction {
+  google.protobuf.Timestamp created = 1;
+
+  // Amount expressed as: [+-]?([0-9]*[.])?[0-9]+
+  string amount = 2;
+
+  string organization_name = 3;
+}
+
+message RegisterInstrumentResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+    STATUS_DUPLICATE = 3;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  // The key representing this instrument in Mica.
+  string service_provider_instrument_key = 3 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  int64 version = 4;
+}
+
+message GetInstrumentRequest {
+  oneof criteria {
+    // The key representing this instrument in Mica.
+    string service_provider_instrument_key = 1 [(validate.rules).string = {
+      min_len: 30,
+      max_len: 50
+    }];
+
+    // Primary key on the external system.
+    string service_provider_instrument_ref = 2;
+  }
+}
+
+message Instrument {
+  // The primary key that represents this instrument at Mica.
+  string service_provider_instrument_key = 1 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  // version of the user record, used for optimistic locking.
+  int64 version = 2;
+
+  // Date that the Store was created at Mica.
+  google.protobuf.Timestamp created = 3;
+
+  // Date that the Store was last updated at Mica.
+  google.protobuf.Timestamp updated = 4;
+
+  // Primary key on the external system.
+  string service_provider_instrument_ref = 5;
+
+  // The key that represents this user.
+  string service_provider_user_key = 6 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  // Primary key on the external system.
+  string service_provider_user_ref = 7;
+
+  micashared.common.enums.instrumenttype.v1.InstrumentType instrument_type = 8;
+
+  // The 3-letter currency code defined in ISO 4217.
+  micashared.common.enums.currency.v1.Currency currency = 9;
+
+  // Last for characters of this instrument.
+  string nickname = 10;
+}
+
+message GetInstrumentResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+    STATUS_NOT_FOUND = 3;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  Instrument instrument = 3;
+}
+
+message RemoveInstrumentRequest {
+  oneof criteria {
+    // The key representing this instrument in Mica.
+    string service_provider_instrument_key = 1 [(validate.rules).string = {
+      min_len: 30,
+      max_len: 50
+    }];
+
+    // Primary key on the external system.
+    string service_provider_instrument_ref = 2;
+  }
+}
+
+message RemoveInstrumentResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+    STATUS_NOT_FOUND = 3;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+}
+
+message SearchInstrumentRequest {
+  oneof criteria {
+    // The key representing this user in Mica.
+    string service_provider_user_key = 1 [(validate.rules).string = {
+      min_len: 30,
+      max_len: 50
+    }];
+  }
+}
+
+message SearchInstrumentResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+    STATUS_NOT_FOUND = 3;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  // List of instruments that matched the search criteria.
+  repeated Instrument instruments = 3;
+}
+
+message SetPINRequest {
+  oneof criteria {
+    // The key representing this instrument in Mica.
+    string service_provider_instrument_key = 1 [(validate.rules).string = {
+      min_len: 30,
+      max_len: 50
+    }];
+
+    // Primary key on the external system.
+    string service_provider_instrument_ref = 2;
+  }
+
+  string pin = 3; // @gotags: mask:"security"
+}
+
+message SetPINResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+    STATUS_NOT_FOUND = 3;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+}
+
+message ResetPINRequest {
+  oneof criteria {
+    // The key representing this instrument in Mica.
+    string service_provider_instrument_key = 1 [(validate.rules).string = {
+      min_len: 30,
+      max_len: 50
+    }];
+
+    // Primary key on the external system.
+    string service_provider_instrument_ref = 2;
+  }
+
+  string old_pin = 3; // @gotags: mask:"security"
+
+  string new_pin = 4; // @gotags: mask:"security"
+}
+
+message ResetPINResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+    STATUS_NOT_FOUND = 3;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+}
+
+message RemovePINRequest {
+  oneof criteria {
+    // The key representing this instrument in Mica.
+    string service_provider_instrument_key = 1 [(validate.rules).string = {
+      min_len: 30,
+      max_len: 50
+    }];
+
+    // Primary key on the external system.
+    string service_provider_instrument_ref = 2;
+  }
+}
+
+message RemovePINResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+    STATUS_NOT_FOUND = 3;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+}
+
+message RetrieveTransactionRequest {
+  // Primary key on the external system.
+  string service_provider_instrument_ref = 2;
+
+  // Transactions that occurred after this date (inclusive).
+  google.protobuf.Timestamp date_from = 4;
+
+  // Transactions that occurred before this date (exclusive).
+  google.protobuf.Timestamp date_to = 5;
+}
+
+message RetrieveTransactionResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+    STATUS_INSTRUMENT_NOT_FOUND = 3;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  // List of instruments that matched the search criteria.
+  repeated Transaction transactions = 3;
+}

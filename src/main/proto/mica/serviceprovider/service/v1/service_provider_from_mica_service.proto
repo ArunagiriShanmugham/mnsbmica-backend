@@ -1,0 +1,65 @@
+// Copyright (c) 2022 Mica. All rights reserved. All software, including, without limitation, all source
+// code and object code, is the intellectual property of Mica, Inc. and is protected by copyright, trademark and
+// other intellectual property laws (collective "Mica Software"). You may not use, copy, reproduce, download, store,
+// post, broadcast, transmit, modify, sell or make available to the public content from the Mica Software without a
+// valid license or the prior written approval of Mica, Inc. Mica, its logos, slogans, taglines,
+// products, feature names, and other trademarks are trademarks of Mica, Inc. and may not be used without
+// permission.
+
+syntax = "proto3";
+
+package mica.serviceprovider.service.v1;
+
+import "mica/serviceprovider/instrument/v1/instrument.proto";
+import "mica/serviceprovider/user/v1/user.proto";
+import "mica/serviceprovider/value/v1/value.proto";
+import "micashared/common/ping/v1/ping.proto";
+
+option go_package = "mica/serviceprovider/servicev1";
+option java_outer_classname = "ServiceProviderFromMicaServiceProto";
+option java_package = "io.mica.serviceprovider.service.v1";
+option objc_class_prefix = "MICA";
+
+// The operations in this service are called by mica to facilitate the user enrollment process
+// at a Partner, to process transactions and optionally to retrieve a list of Users
+// transactions. With the exception of RetrieveTransactions all the other operations are
+// required.
+// The two Value operations, Obtain and Return, have basically the same structure and content.
+// They primarily differ in the status codes they return. The main Value type includes information
+// about the instrument being used, the amount of the transaction (requested and total amounts),
+// the currency, the organization and store the transation occured in and optionally a list of
+// items the user is purchasing or returning.
+service ServiceProviderFromMicaService {
+  // When a User initiates an enrollment at a Partner, mica will call this operation in order to
+  // pass the SP the matching code. The SP will then send the matching code to their User through
+  // whatever channel they already use to message their users.
+  rpc EnrollUserInstrument(user.v1.EnrollUserInstrumentRequest) returns (user.v1.EnrollUserInstrumentResponse) {}
+
+  // Operation that can be used to retrieve a very simple transaction history for a given
+  // instrument and date range.
+  rpc RetrieveTransaction(instrument.v1.RetrieveTransactionRequest) returns (instrument.v1.RetrieveTransactionResponse) {}
+
+  //<editor-fold desc="Value Operations">
+
+  // Operation to obtain value from a given instrument. Along with a common Value object (see
+  // above), it includes an approval type of either FULL or PARTIAL.
+  rpc ObtainValue(value.v1.ObtainValueRequest) returns (value.v1.ObtainValueResponse) {}
+
+  // Reverse a ObtainValue transaction
+  rpc ReverseObtainValue(value.v1.ReverseValueRequest) returns (value.v1.ReverseValueResponse) {}
+
+  // Operation to return value to a given instrument.
+  rpc ReturnValue(value.v1.ReturnValueRequest) returns (value.v1.ReturnValueResponse) {}
+
+  // Reverse a ReturnValue transaction
+  rpc ReverseReturnValue(value.v1.ReverseValueRequest) returns (value.v1.ReverseValueResponse) {}
+
+  rpc ReceiveValue(value.v1.ReceiveValueRequest) returns (value.v1.ReceiveValueResponse) {}
+  //</editor-fold>
+
+  //<editor-fold desc="Admin Operations">
+
+  // An operation to ping the server to ensure it's up and running and that the connection is good.
+  rpc Ping(micashared.common.ping.v1.PingRequest) returns (micashared.common.ping.v1.PingResponse) {}
+  //</editor-fold>
+}

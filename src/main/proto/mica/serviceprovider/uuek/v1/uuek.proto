@@ -1,0 +1,144 @@
+// Copyright (c) 2022 Mica. All rights reserved. All software, including, without limitation, all source
+// code and object code, is the intellectual property of Mica, Inc. and is protected by copyright, trademark and
+// other intellectual property laws (collective "Mica Software"). You may not use, copy, reproduce, download, store,
+// post, broadcast, transmit, modify, sell or make available to the public content from the Mica Software without a
+// valid license or the prior written approval of Mica, Inc. Mica, its logos, slogans, taglines,
+// products, feature names, and other trademarks are trademarks of Mica, Inc. and may not be used without
+// permission.
+
+syntax = "proto3";
+
+package mica.serviceprovider.uuek.v1;
+
+import "google/protobuf/timestamp.proto";
+import "micashared/common/v1/error.proto";
+import "micashared/common/v1/uuek.proto";
+import "validate/validate.proto";
+
+option go_package = "mica/serviceprovider/uuekv1";
+option java_outer_classname = "ProvisionServiceProviderUUEKProto";
+option java_package = "io.mica.serviceprovider.uuek.v1";
+option objc_class_prefix = "MICA";
+
+message ServiceProviderUUEK {
+  // Mica generated key for the user that owns this UUEK.
+  string service_provider_user_key = 1 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  // the primary key of this user at the Service Provider.
+  string service_provider_user_ref = 2;
+
+  // Mica generated key for the instrument that this UUEK represents.
+  string service_provider_instrument_key = 3 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  // the primary key of this instrument at the Service Provider.
+  string service_provider_instrument_ref = 4;
+
+  micashared.common.v1.CommonUUEK uuek = 5;
+}
+
+// to Mica
+message ProvisionServiceProviderUUEKRequest {
+  oneof criteria {
+    option (validate.required) = true;
+    // The key representing this instrument in Mica.
+    string service_provider_instrument_key = 1 [(validate.rules).string = {
+      min_len: 30,
+      max_len: 50
+    }];
+
+    // Primary key on the external system.
+    string service_provider_instrument_ref = 2;
+  }
+
+  // if set the provisioned UUEK will not be valid until the specified time if not set the UUEK is valid immediately
+  google.protobuf.Timestamp valid_from = 3;
+
+  // if set the provisioned UUEK will expired at the specified time, if not set it will be used untile removed
+  google.protobuf.Timestamp valid_to = 4;
+
+  // a maximum transaction that is allowed for this UUEK if the value request exceeds this
+  // amount it will fail. If not set any transaction amount is allowed.
+  string spend_limit = 5;
+
+  // the number of transactions that this UUEK can be used 
+  // either a positive value greater than 0 or make it unlimited
+  oneof use_criteria {
+    option (validate.required) = true;
+    uint32 number_of_uses = 6 [(validate.rules).uint32.gt = 0]; 
+
+    bool unlimited = 7;
+  }
+}
+
+message ProvisionServiceProviderUUEKResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+    STATUS_INSTRUMENT_NOT_FOUND = 3;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  // A UUEK that can be used at all partners.
+  string service_provider_uuek = 3 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+}
+
+message RemoveServiceProviderUUEKRequest {
+  oneof criteria {
+    // The key representing this instrument in Mica.
+    string service_provider_instrument_key = 1 [(validate.rules).string = {
+      min_len: 30,
+      max_len: 50
+    }];
+
+    // Primary key on the external system.
+    string service_provider_instrument_ref = 2;
+
+    // A UUEK that can be used at all partners.
+    string service_provider_uuek = 3; // @gotags: mask:"security"
+  }
+}
+
+message RemoveServiceProviderUUEKResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+    STATUS_NOT_FOUND = 3;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  repeated string service_provider_uueks = 3; // @gotags: mask:"security"
+}
+
+message SearchServiceProviderUUEKRequest {
+  string service_provider_user_key = 1 [(validate.rules).string = {max_len: 50}];
+
+  string service_provider_instrument_key = 2 [(validate.rules).string = {max_len: 50}];
+}
+
+message SearchServiceProviderUUEKResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  repeated ServiceProviderUUEK service_provider_uueks = 3; // @gotags: mask:"security"
+}

@@ -1,0 +1,94 @@
+// Copyright (c) 2022 Mica. All rights reserved. All software, including, without limitation, all source
+// code and object code, is the intellectual property of Mica, Inc. and is protected by copyright, trademark and
+// other intellectual property laws (collective "Mica Software"). You may not use, copy, reproduce, download, store,
+// post, broadcast, transmit, modify, sell or make available to the public content from the Mica Software without a
+// valid license or the prior written approval of Mica, Inc. Mica, its logos, slogans, taglines,
+// products, feature names, and other trademarks are trademarks of Mica, Inc. and may not be used without
+// permission.
+
+syntax = "proto3";
+
+package mica.serviceprovider.discount.v1;
+
+import "google/protobuf/timestamp.proto";
+import "mica/discount/discount/v1/discount.proto";
+import "micashared/common/enums/currency/v1/currency.proto";
+import "micashared/common/enums/discounttype/v1/discount_type.proto";
+import "micashared/common/v1/error.proto";
+import "micashared/common/v1/pagination.proto";
+import "validate/validate.proto";
+
+option go_package = "mica/serviceprovider/discountv1";
+option java_outer_classname = "DiscountProto";
+option java_package = "io.mica.serviceprovider.discount.v1";
+option objc_class_prefix = "MICA";
+
+message ServiceProviderUserDiscount {
+  string discount_key = 1 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  // human readable description for a given discount that can be shown to the end user
+  string headline = 11 [(validate.rules).string.max_len = 100];
+
+  // human readable description for a given discount that can be shown to the end user
+  string summary = 12 [(validate.rules).string.max_len = 300];
+
+  // human readable description for a given discount that can be shown to the end user
+  string receipt_description = 2 [(validate.rules).string.max_len = 200];
+
+  mica.discount.discount.v1.DiscountStatus status = 3;
+
+  micashared.common.enums.discounttype.v1.DiscountType type = 4;
+
+  google.protobuf.Timestamp valid_from = 5 [(validate.rules).timestamp.required = false];
+
+  google.protobuf.Timestamp valid_to = 6 [(validate.rules).timestamp = {
+    required: false,
+    gt_now: true
+  }];
+
+  micashared.common.enums.currency.v1.Currency currency = 7;
+
+  oneof discount_amount {
+    mica.discount.discount.v1.MonetaryAmount monetary_amount = 8;
+    mica.discount.discount.v1.PercentageAmount percentage_amount = 9;
+  }
+
+  // address to the image for this discount definition (note that this image is expected to be square)
+  string thumbnail_url = 10;
+}
+
+// This operation will only filter discounts that are valid and ignores any that aren't
+message SearchUserDiscountRequest {
+  oneof criteria {
+    // The key representing this user in Mica.
+    string service_provider_user_key = 1 [(validate.rules).string = {
+      min_len: 30,
+      max_len: 50
+    }];
+
+    // Primary key on the external system.
+    string service_provider_user_ref = 2;
+  }
+
+  micashared.common.enums.discounttype.v1.DiscountType type = 3;
+
+  micashared.common.v1.Pagination pagination = 5;
+}
+
+message SearchUserDiscountResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  repeated ServiceProviderUserDiscount user_discounts = 3;
+
+  micashared.common.v1.Pagination pagination = 5;
+}

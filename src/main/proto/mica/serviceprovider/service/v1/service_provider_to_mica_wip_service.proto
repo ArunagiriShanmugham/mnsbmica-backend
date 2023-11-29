@@ -1,0 +1,176 @@
+// Copyright (c) 2022 Mica. All rights reserved. All software, including, without limitation, all source
+// code and object code, is the intellectual property of Mica, Inc. and is protected by copyright, trademark and
+// other intellectual property laws (collective "Mica Software"). You may not use, copy, reproduce, download, store,
+// post, broadcast, transmit, modify, sell or make available to the public content from the Mica Software without a
+// valid license or the prior written approval of Mica, Inc. Mica, its logos, slogans, taglines,
+// products, feature names, and other trademarks are trademarks of Mica, Inc. and may not be used without
+// permission.
+
+syntax = "proto3";
+
+package mica.serviceprovider.service.v1;
+
+import "micashared/common/enums/currency/v1/currency.proto";
+import "micashared/common/enums/instrumenttype/v1/instrument_type.proto";
+import "micashared/common/v1/error.proto";
+import "micashared/common/v1/pagination.proto";
+import "micashared/common/v1/user.proto";
+import "validate/validate.proto";
+
+option go_package = "mica/serviceprovider/servicev1";
+option java_outer_classname = "ServiceProviderToMicaWIPServiceProto";
+option java_package = "io.mica.serviceprovider.service.v1";
+option objc_class_prefix = "MICA";
+
+// Service for Work In Progress or experimental operations that may become a standard product feature in the future
+service ServiceProviderToMicaWIPService {
+  //<editor-fold desc="Directory Proxy Operations">
+
+  rpc SetVisibilityStatus(SetVisibilityStatusRequest) returns (SetVisibilityStatusResponse) {
+    // set visibility_status
+  }
+
+  rpc DiscoverUser(DiscoverUserRequest) returns (DiscoverUserResponse) {}
+
+  rpc GetServiceProviderUUEK(GetServiceProviderUUEKRequest) returns (GetServiceProviderUUEKResponse) {}
+  //</editor-fold>
+
+  //<editor-fold desc="Service Provider intiated enrollment authentication">
+  rpc ProvisionEnrollmentValidationCode(ProvisionEnrollmentValidationCodeRequest) returns (ProvisionEnrollmentValidationCodeResponse) {}
+  //</editor-fold>
+}
+
+enum VisibilityStatus {
+  VISIBILITY_STATUS_UNSPECIFIED = 0;
+  VISIBILITY_STATUS_DISCOVERABLE = 1;
+  VISIBILITY_STATUS_HIDDEN = 2;
+}
+
+message SetVisibilityStatusRequest {
+  string service_provider_user_key = 1 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  string service_provider_instrument_key = 3 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  VisibilityStatus visibility_status = 7;
+}
+
+message SetVisibilityStatusResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+    STATUS_NOT_FOUND = 3;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+}
+
+message DiscoverUserRequest {
+  micashared.common.v1.UserDemographic user_demographic = 2;
+
+  micashared.common.v1.Pagination pagination = 4;
+}
+
+message DiscoverUserResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  repeated User users = 3;
+
+  micashared.common.v1.Pagination pagination = 5;
+}
+
+message GetServiceProviderUUEKRequest {
+  string uuek = 4 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+}
+
+message GetServiceProviderUUEKResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+    STATUS_INSTRUMENT_NOT_FOUND = 3;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  micashared.common.v1.UserDemographic user_demographic = 3;
+}
+
+message User {
+  string service_provider_user_key = 1 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  micashared.common.v1.UserDemographic user_demographic = 2;
+
+  string service_provider_name = 3;
+
+  micashared.common.enums.instrumenttype.v1.InstrumentType instrument_type = 4;
+
+  // The 3-letter currency code defined in ISO 4217.
+  micashared.common.enums.currency.v1.Currency currency = 5;
+
+  // Last 4 digits of this instrument.
+  string nickname = 6;
+
+  string uuek = 7 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+}
+
+
+message ProvisionEnrollmentValidationCodeRequest {
+  oneof user_criteria{
+    option (validate.required) = true;
+    //this is the id in the service provider for the user that is requesting an enrollment
+    string service_provider_user_ref = 1;
+    string service_provider_user_key = 2;
+  }
+  
+  oneof instrument_criteria {
+    option (validate.required) = true;
+
+    //this is the id in the service provider for the instrument (account, etc) that will be used to transact. 
+    string service_provider_instrument_ref = 3;
+    string service_provider_instrument_key = 4;
+  }
+
+  //if this is set the values will be shared with the other side that is performing the enrollment
+  micashared.common.v1.UserDemographic shared_user_information = 5;
+}
+
+message ProvisionEnrollmentValidationCodeResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+    STATUS_INSTRUMENT_NOT_FOUND = 3;
+    STATUS_USER_NOT_FOUND = 4;
+  }
+  Status status = 1; 
+
+  micashared.common.v1.Error error = 2;
+
+  //this is the code that the service provider will present/send or do something with for the user
+  string validation_code = 3;
+}

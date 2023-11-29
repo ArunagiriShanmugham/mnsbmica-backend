@@ -1,0 +1,212 @@
+// Copyright (c) 2022 Mica. All rights reserved. All software, including, without limitation, all source
+// code and object code, is the intellectual property of Mica, Inc. and is protected by copyright, trademark and
+// other intellectual property laws (collective "Mica Software"). You may not use, copy, reproduce, download, store,
+// post, broadcast, transmit, modify, sell or make available to the public content from the Mica Software without a
+// valid license or the prior written approval of Mica, Inc. Mica, its logos, slogans, taglines,
+// products, feature names, and other trademarks are trademarks of Mica, Inc. and may not be used without
+// permission.
+
+syntax = "proto3";
+
+package mica.serviceprovider.user.v1;
+
+import "google/protobuf/timestamp.proto";
+import "micashared/common/v1/error.proto";
+import "micashared/common/v1/user.proto";
+import "validate/validate.proto";
+
+option go_package = "mica/serviceprovider/userv1";
+option java_outer_classname = "UserProto";
+option java_package = "io.mica.serviceprovider.user.v1";
+option objc_class_prefix = "MICA";
+
+message User {
+  // version of the user record, used for optimistic locking
+  int64 version = 1;
+
+  // Date that the Store was created at Mica.
+  google.protobuf.Timestamp created = 2;
+
+  // Date that the Store was last updated at Mica.
+  google.protobuf.Timestamp updated = 3;
+
+  // The key representing this user in Mica.
+  string service_provider_user_key = 4 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  // Primary key on the external system.
+  string service_provider_user_ref = 5;
+
+  micashared.common.v1.UserDemographic user_demographic = 6;
+}
+
+// to Mica
+
+message RegisterUserRequest {
+  // Primary key on the external system.
+  string service_provider_user_ref = 8;
+
+  micashared.common.v1.UserDemographic user_demographic = 1;
+}
+
+message RegisterUserResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+    STATUS_DUPLICATE = 3;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  // The key representing this user in Mica.
+  string service_provider_user_key = 3 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  int64 version = 4;
+}
+
+message UpdateUserRequest {
+  // The key representing this user in Mica.
+  string service_provider_user_key = 1 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  int64 version = 2;
+
+  micashared.common.v1.UserDemographic user_demographic = 3;
+}
+
+message UpdateUserResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+    STATUS_NOT_FOUND = 3;
+    STATUS_VERSION_MISMATCH = 4;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  int64 version = 3;
+}
+
+message RemoveUserRequest {
+  // The key representing this user in Mica.
+  string service_provider_user_key = 1 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+}
+
+message RemoveUserResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+    STATUS_NOT_FOUND = 3;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+}
+
+message GetUserRequest {
+  oneof criteria {
+    // The key representing this user in Mica.
+    string service_provider_user_key = 1 [(validate.rules).string = {
+      min_len: 30,
+      max_len: 50
+    }];
+
+    // Primary key on the external system.
+    string service_provider_user_ref = 2;
+  }
+}
+
+message GetUserResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+    STATUS_NOT_FOUND = 3;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  User user = 3;
+}
+
+message SearchUserRequest {
+  // The key representing this user in Mica.
+  string service_provider_user_key = 1;
+
+  string first_name = 2; // @gotags: mask:"pii"
+
+  string last_name = 3; // @gotags: mask:"pii"
+
+  string email = 4; // @gotags: mask:"pii"
+
+  string phone = 5; // @gotags: mask:"pii"
+}
+
+message SearchUserResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  repeated User users = 3;
+}
+
+// from Mica
+
+message EnrollUserInstrumentRequest {
+  // The key representing this user in Mica.
+  string service_provider_user_key = 1 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  // Primary key on the external system.
+  string service_provider_user_ref = 2;
+
+  // The key representing this instrument in Mica.
+  string service_provider_instrument_key = 3 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  // Primary key on the external system.
+  string service_provider_instrument_ref = 4;
+
+  // The 8 character code that needs to be sent to the user
+  string matching_code = 6;
+}
+
+message EnrollUserInstrumentResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+    STATUS_NOT_FOUND = 3;
+    STATUS_USER_CLOSED = 4;
+    // temporary state in which the user can try again later
+    STATUS_RISK_FRAUD = 5;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+}

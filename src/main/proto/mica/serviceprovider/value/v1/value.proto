@@ -1,0 +1,465 @@
+// Copyright (c) 2022 Mica. All rights reserved. All software, including, without limitation, all source
+// code and object code, is the intellectual property of Mica, Inc. and is protected by copyright, trademark and
+// other intellectual property laws (collective "Mica Software"). You may not use, copy, reproduce, download, store,
+// post, broadcast, transmit, modify, sell or make available to the public content from the Mica Software without a
+// valid license or the prior written approval of Mica, Inc. Mica, its logos, slogans, taglines,
+// products, feature names, and other trademarks are trademarks of Mica, Inc. and may not be used without
+// permission.
+
+syntax = "proto3";
+
+package mica.serviceprovider.value.v1;
+
+import "google/protobuf/timestamp.proto";
+import "micashared/common/enums/approvaltype/v1/approval_type.proto";
+import "micashared/common/enums/currency/v1/currency.proto";
+import "micashared/common/enums/organizationcategory/v1/organization_category.proto";
+import "micashared/common/enums/valueoperationtype/v1/value_operation_type.proto";
+import "micashared/common/v1/address.proto";
+import "micashared/common/v1/error.proto";
+import "validate/validate.proto";
+
+option go_package = "mica/serviceprovider/valuev1";
+option java_outer_classname = "ValueProto";
+option java_package = "io.mica.serviceprovider.value.v1";
+option objc_class_prefix = "MICA";
+
+// Type that represents the details of the value request (either to obtain or return).
+message Value {
+  // Mica's transaction record primary key.
+  string transaction_key = 1 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  // version of the user record, used for optimistic locking.
+  int64 version = 2;
+
+  // Date that the Store was created at Mica.
+  google.protobuf.Timestamp created = 3;
+
+  // Date that the Store was last updated at Mica.
+  google.protobuf.Timestamp updated = 4;
+
+  micashared.common.enums.valueoperationtype.v1.ValueOperationType operation_type = 5;
+
+  // The Mica generated key for this instrument.
+  string service_provider_instrument_key = 6 [(validate.rules).string = {max_len: 50}];
+
+  // Service Provider's primary key for their instrument.
+  string service_provider_instrument_ref = 7;
+
+  // The 3-letter currency code defined in ISO 4217. Note all amounts are in this currency.
+  micashared.common.enums.currency.v1.Currency currency = 9;
+
+  // The organization this operation is being processed for.
+  string organization_key = 10 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  // The organization name this operation is being processed for.
+  string organization_name = 11;
+
+  // The organization address this operation is being processed for.
+  micashared.common.v1.Address organization_address = 12;
+
+  // The organizations category.
+  micashared.common.enums.organizationcategory.v1.OrganizationCategory category = 13;
+
+  // The store where this operation occurred.
+  string store_key = 14 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  // The number of this store (an alternative unique value).
+  string store_number = 15;
+
+  // The street address of this store.
+  micashared.common.v1.Address store_address = 16;
+
+  // The clerk that processed this operation.
+  string clerk_identifier = 17;
+
+  // Total amount for this transaction.
+  // Amount expressed as: [+-]?([0-9]*[.])?[0-9]+
+  string total_amount = 18;
+
+  // Total discount amount for this transaction.
+  // Amount expressed as: [+-]?([0-9]*[.])?[0-9]+
+  string discount_amount = 21;
+
+  // Total discount amount for this transaction.
+  // Amount expressed as: [+-]?([0-9]*[.])?[0-9]+
+  string ineligible_amount = 22;
+
+  // The amount requested from the Service Provider for this transaction. Note that this calculated as:
+  //    requested_amount = total_amount - discount_amount - ineligible_amount
+  // Amount expressed as: [+-]?([0-9]*[.])?[0-9]+
+  string requested_amount = 19;
+
+  string order_number = 20;
+}
+
+// Type that represents the details of the value request (either to obtain or return).
+message ValueRequest {
+  // Mica's transaction record primary key.
+  string transaction_key = 1 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  // The Mica generated key for this instrument.
+  string service_provider_instrument_key = 2 [(validate.rules).string = {max_len: 50}];
+
+  // Service Provider's primary key for their instrument.
+  string service_provider_instrument_ref = 3;
+
+  // Service Provider's transaction record primary key. Not sent for obtain and refund transactions, but included in reverses (different ID *should* come back)
+  string transaction_ref = 4;
+
+  // The 3-letter currency code defined in ISO 4217. Note all amounts are in this currency.
+  micashared.common.enums.currency.v1.Currency currency = 5;
+
+  // The organization this operation is being processed for.
+  string organization_key = 6 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  // The organization name this operation is being processed for.
+  string organization_name = 7;
+
+  // The organization address this operation is being processed for.
+  micashared.common.v1.Address organization_address = 8;
+
+  // The organizations category.
+  micashared.common.enums.organizationcategory.v1.OrganizationCategory category = 9;
+
+  // The store where this operation occurred.
+  string store_key = 10 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  // The number of this store (an alternative unique value).
+  string store_number = 11;
+
+  // The street address of this store.
+  micashared.common.v1.Address store_address = 12;
+
+  // The clerk that processed this operation.
+  string clerk_identifier = 13;
+
+  // Total amount for this transaction.
+  // Amount expressed as: [+-]?([0-9]*[.])?[0-9]+
+  string total_amount = 14;
+
+  // Total discount amount for this transaction.
+  // Amount expressed as: [+-]?([0-9]*[.])?[0-9]+
+  string discount_amount = 17;
+
+  // Total discount amount for this transaction.
+  // Amount expressed as: [+-]?([0-9]*[.])?[0-9]+
+  string ineligible_amount = 18;
+
+  // The amount requested from the Service Provider for this transaction. Note that this calculated as:
+  //    requested_amount = total_amount - discount_amount - ineligible_amount
+  // Amount expressed as: [+-]?([0-9]*[.])?[0-9]+
+  string requested_amount = 15;
+
+  string order_number = 16;
+}
+
+enum PINStatus {
+  PIN_STATUS_UNSPECIFIED = 0;
+
+  PIN_STATUS_MATCH = 1;
+}
+
+message ObtainValueRequest {
+  micashared.common.enums.approvaltype.v1.ApprovalType approval_type = 1;
+
+  ValueRequest value = 2;
+}
+
+message ObtainValueResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    // An approval for the full amount
+    STATUS_FULL_APPROVAL = 1;
+    // An error occurred when processing the request
+    STATUS_ERROR = 2;
+    // An approval was given for a partial amount
+    STATUS_PARTIAL_APPROVAL = 3;
+    // User instrument doesn't have sufficient value to cover the transaction
+    STATUS_INSUFFICIENT_VALUE = 4;
+    // When all products are either ineligible or age restricted
+    STATUS_INELIGIBLE_PRODUCTS = 5;
+    // Instrument/account not found
+    STATUS_NOT_FOUND = 6;
+    // User instrument is closed
+    STATUS_INSTRUMENT_CLOSED = 7;
+    // Request triggered a transactional risk or fraud check resulting in a decline
+    STATUS_TRANSACTION_RISK_FRAUD = 8;
+    // Request triggered a bad actor risk or fraud check resulting in a decline
+    STATUS_BAD_ACTOR_RISK_FRAUD = 16;
+    // Request triggered a user-based risk or fraud check resulting in a decline
+    STATUS_USER_RISK_FRAUD = 17;
+    // Request triggered a instrument-based risk or fraud check resulting in a decline
+    STATUS_INSTRUMENT_RISK_FRAUD = 18;
+    // The user needs to call the Service Provider to resolve an issue
+    STATUS_USER_CALL_SERVICE_PROVIDER = 9;
+    // The operation isn't supported by the Service Provider
+    STATUS_UNSUPPORTED = 10;
+    // The Service Provider is temporarily unavailable
+    STATUS_SERVICE_PROVIDER_UNAVAILABLE = 11;
+    // The UUEK sent is invalid or not found
+    STATUS_INVALID_UUEK = 12;
+    // A valid PIN is required for this transaction
+    STATUS_PIN_REQUIRED = 13;
+    // Request resulted in one or more limits being exceeded at the Service Provider
+    STATUS_LIMIT_EXCEEDED = 19;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  string transaction_ref = 3;
+
+  // Amount expressed as: [+-]?([0-9]*[.])?[0-9]+
+  string approved_amount = 4;
+}
+
+message ReverseValueRequest {
+  string transaction_key = 1;
+
+  string transaction_ref = 2;
+}
+
+// TODO(kuchlein): I'm not sold on this list but I think its a place to start
+message ReverseValueResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    // An approval for the full amount
+    STATUS_FULL_APPROVAL = 1;
+    // An error occurred when processing the request
+    STATUS_ERROR = 2;
+    // Instrument/account not found
+    STATUS_NOT_FOUND = 4;
+    // User instrument is closed
+    STATUS_INSTRUMENT_CLOSED = 5;
+    // Request triggered a transactional risk or fraud check resulting in a decline
+    STATUS_TRANSACTION_RISK_FRAUD = 6;
+    // Request triggered a bad actor risk or fraud check resulting in a decline
+    STATUS_BAD_ACTOR_RISK_FRAUD = 7;
+    // Request triggered a user-based risk or fraud check resulting in a decline
+    STATUS_USER_RISK_FRAUD = 8;
+    // Request triggered a instrument-based risk or fraud check resulting in a decline
+    STATUS_INSTRUMENT_RISK_FRAUD = 9;
+    // The operation isn't supported by the Service Provider
+    STATUS_UNSUPPORTED = 11;
+    // The Service Provider is temporarily unavailable
+    STATUS_SERVICE_PROVIDER_UNAVAILABLE = 12;
+    // Request resulted in one or more limits being exceeded at the Service Provider
+    STATUS_LIMIT_EXCEEDED = 13;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  // Service Provider's unique transaction ID, new for reversal transaction
+  string transaction_ref = 3;
+}
+
+message ReturnValueRequest {
+  ValueRequest value = 1;
+}
+
+message ReturnValueResponse {
+  enum Status {
+    reserved 3, 4;
+    STATUS_UNSPECIFIED = 0;
+    // An approval for the full amount
+    STATUS_FULL_APPROVAL = 1;
+    // An error occurred when processing the request
+    STATUS_ERROR = 2;
+    // Instrument/account not found
+    STATUS_NOT_FOUND = 6;
+    // User instrument is closed
+    STATUS_INSTRUMENT_CLOSED = 7;
+    // Request triggered a transactional risk or fraud check resulting in a decline
+    STATUS_TRANSACTION_RISK_FRAUD = 8;
+    // Request triggered a bad actor risk or fraud check resulting in a decline
+    STATUS_BAD_ACTOR_RISK_FRAUD = 16;
+    // Request triggered a user-based risk or fraud check resulting in a decline
+    STATUS_USER_RISK_FRAUD = 17;
+    // Request triggered a instrument-based risk or fraud check resulting in a decline
+    STATUS_INSTRUMENT_RISK_FRAUD = 18;
+    // The user needs to call the Service Provider to resolve an issue
+    STATUS_USER_CALL_SERVICE_PROVIDER = 9;
+    // The operation isn't supported by the Service Provider
+    STATUS_UNSUPPORTED = 10;
+    // The Service Provider is temporarily unavailable
+    STATUS_SERVICE_PROVIDER_UNAVAILABLE = 11;
+    // The UUEK sent is invalid or not found
+    STATUS_INVALID_UUEK = 12;
+    // A valid PIN is required for this transaction
+    STATUS_PIN_REQUIRED = 13;
+    // Request resulted in one or more limits being exceeded at the Service Provider
+    STATUS_LIMIT_EXCEEDED = 19;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  string transaction_ref = 3;
+
+  // Amount expressed as: [+-]?([0-9]*[.])?[0-9]+
+  string approved_amount = 4;
+}
+
+message From {
+  // the sender uuek
+  string uuek = 4;
+
+  // The first name of the sender.
+  string first_name = 5;
+
+  // The last name of the sender.
+  string last_name = 6;
+
+  // The email of the sender.
+  string email = 7;
+
+  // name of sending service provider
+  string service_provider_name = 8;
+}
+
+message ReceiveValueRequest {
+  // The Mica generated key for this instrument.
+  string to_service_provider_instrument_key = 1 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  // Service Provider's primary key for their instrument.
+  string to_service_provider_instrument_ref = 2;
+
+  micashared.common.enums.currency.v1.Currency currency = 3;
+
+  // the amount that's being received
+  // Amount expressed as: [+-]?([0-9]*[.])?[0-9]+
+  string amount = 4;
+
+  serviceprovider.value.v1.From from = 5;
+}
+
+message ReceiveValueResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  string transaction_ref = 3;
+}
+
+message GetValueRequest {
+  oneof identifier {
+    string transaction_key = 1;
+
+    // the Partner's reference for this transaction
+    string partner_transaction_ref = 2;
+  }
+}
+
+message GetValueResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+    STATUS_NOT_FOUND = 3;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  Value value = 3;
+}
+
+message SearchValueRequest {
+  // Mica's transaction record primary key.
+  string transaction_key = 1 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  // The UUEK of the user.
+  string service_provider_uuek = 2;
+
+  // Service Provider's primary key for their instrument.
+  string service_provider_instrument_ref = 3;
+
+  // Transactions that occurred after this date (inclusive).
+  google.protobuf.Timestamp date_from = 4;
+
+  // Transactions that occurred before this date (exclusive).
+  google.protobuf.Timestamp date_to = 5;
+}
+
+message SearchValueResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  repeated Value value = 3;
+}
+
+//<editor-fold desc="Person to Person Operations">
+
+message SendValueRequest {
+  string from_service_provider_user_key = 1 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  string from_service_provider_instrument_key = 2 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  // @gotags: mask:"security"
+  string to_uuek = 3 [(validate.rules).string = {
+    min_len: 30,
+    max_len: 50
+  }];
+
+  micashared.common.enums.currency.v1.Currency currency = 4;
+
+  // Amount expressed as: [+-]?([0-9]*[.])?[0-9]+
+  string amount = 5;
+}
+
+message SendValueResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_ERROR = 2;
+  }
+  Status status = 1;
+
+  micashared.common.v1.Error error = 2;
+
+  string transaction_key = 3;
+}
+//</editor-fold>

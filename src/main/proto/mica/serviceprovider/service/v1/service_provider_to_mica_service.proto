@@ -1,0 +1,124 @@
+// Copyright (c) 2022 Mica. All rights reserved. All software, including, without limitation, all source
+// code and object code, is the intellectual property of Mica, Inc. and is protected by copyright, trademark and
+// other intellectual property laws (collective "Mica Software"). You may not use, copy, reproduce, download, store,
+// post, broadcast, transmit, modify, sell or make available to the public content from the Mica Software without a
+// valid license or the prior written approval of Mica, Inc. Mica, its logos, slogans, taglines,
+// products, feature names, and other trademarks are trademarks of Mica, Inc. and may not be used without
+// permission.
+
+syntax = "proto3";
+
+package mica.serviceprovider.service.v1;
+
+import "mica/serviceprovider/discount/v1/discount.proto";
+import "mica/serviceprovider/instrument/v1/instrument.proto";
+import "mica/serviceprovider/uuek/v1/uuek.proto";
+import "mica/serviceprovider/serviceprovider/v1/service_provider.proto";
+import "mica/serviceprovider/user/v1/user.proto";
+import "mica/serviceprovider/value/v1/value.proto";
+import "micashared/common/ping/v1/ping.proto";
+import "micashared/common/v1/receipt.proto";
+
+option go_package = "mica/serviceprovider/servicev1";
+option java_outer_classname = "ServiceProviderToMicaServiceProto";
+option java_package = "io.mica.serviceprovider.service.v1";
+option objc_class_prefix = "MICA";
+
+// The operations in this service allow the Service Provider to register their users and
+// the user's instruments (accounts).  In addition there are operations to update, retrieve, search
+// and delete those users and instruments. The SP can retrieve/search Organizations to retrieve
+// information about them that is not passed via ValueObtain or ValueReturn. Finally the SP can
+// provision it's own UUEKs which it can distribute to it's own users.
+// The SP starts by authenticating themselves after which they can call the other operations in
+// this service. At a minimum, the SP will need to call RegisterUser and RegisterInstrument for
+// each user and instrument they want to make available for their users at mica. For both Users and
+// Instruments the SP can retrieve, update and remove them.
+// When mica calls the SP with either ValueObtain or ValueReturn mica will include the
+// organizationKey and the specific category being used for this request. If the SP wants to get
+// more information about the organization (e.g. name, all categories, and it's address) they can
+// use the GetOrganization and SearchOrganization calls.
+service ServiceProviderToMicaService {
+  //<editor-fold desc="Service Provider Operations">
+
+  // Retrieves the details of the SP at mica.
+  rpc GetServiceProvider(serviceprovider.v1.GetServiceProviderRequest) returns (serviceprovider.v1.GetServiceProviderResponse) {}
+  //</editor-fold>
+
+  //<editor-fold desc="User Operations">
+
+  // Called when the Service Provider wants to register one of their users for mica. Note that this does only the user and not the instrument (account).
+  rpc RegisterUser(user.v1.RegisterUserRequest) returns (user.v1.RegisterUserResponse) {}
+
+  // Retrieve a user based on it's key.
+  rpc GetUser(user.v1.GetUserRequest) returns (user.v1.GetUserResponse) {}
+
+  // Update the User demographic data held at mica.
+  rpc UpdateUser(user.v1.UpdateUserRequest) returns (user.v1.UpdateUserResponse) {}
+
+  // Remove a User from mica. Typically called when a User ends their relationship with the SP.
+  rpc RemoveUser(user.v1.RemoveUserRequest) returns (user.v1.RemoveUserResponse) {}
+
+  // Searches for Users held at mica..
+  rpc SearchUser(user.v1.SearchUserRequest) returns (user.v1.SearchUserResponse) {}
+  //</editor-fold>
+
+  //<editor-fold desc="Instrument Operations">
+
+  // Called to register a Users instrument (account) for use at mica. This requires a user to already have been registered.
+  rpc RegisterInstrument(instrument.v1.RegisterInstrumentRequest) returns (instrument.v1.RegisterInstrumentResponse) {}
+
+  // Retrieve an instrument based on it's key.
+  rpc GetInstrument(instrument.v1.GetInstrumentRequest) returns (instrument.v1.GetInstrumentResponse) {}
+
+  // Remove an instrument (and any SP or Partner UUEKs) from mica. This renders any existing UUEKs as inoperative.
+  rpc RemoveInstrument(instrument.v1.RemoveInstrumentRequest) returns (instrument.v1.RemoveInstrumentResponse) {}
+
+  // Like GetInstrument, can be used to retrieve Instruments based on the criteria in the request.
+  rpc SearchInstrument(instrument.v1.SearchInstrumentRequest) returns (instrument.v1.SearchInstrumentResponse) {}
+  //</editor-fold>
+
+  //<editor-fold desc="PIN Operations">
+
+  rpc SetPIN(instrument.v1.SetPINRequest) returns (instrument.v1.SetPINResponse) {}
+
+  rpc ResetPIN(instrument.v1.ResetPINRequest) returns (instrument.v1.ResetPINResponse) {}
+
+  rpc RemovePIN(instrument.v1.RemovePINRequest) returns (instrument.v1.RemovePINResponse) {}
+  //</editor-fold>
+
+  //<editor-fold desc="UUEK Operations">
+
+  // Used to create a UUEK that can be given to the SP's users in order to transact at Partners (merhants) that support mica.
+  rpc ProvisionServiceProviderUUEK(uuek.v1.ProvisionServiceProviderUUEKRequest) returns (uuek.v1.ProvisionServiceProviderUUEKResponse) {}
+
+  // Used to remove an existing UUEK from mica rendering it inoperable.
+  rpc RemoveServiceProviderUUEK(uuek.v1.RemoveServiceProviderUUEKRequest) returns (uuek.v1.RemoveServiceProviderUUEKResponse) {}
+
+  // Searches for UUEKs by criteria.
+  rpc SearchServiceProviderUUEK(uuek.v1.SearchServiceProviderUUEKRequest) returns (uuek.v1.SearchServiceProviderUUEKResponse) {}
+  //</editor-fold>
+
+  //<editor-fold desc="Person to Person Operations">
+
+  rpc SendValue(value.v1.SendValueRequest) returns (value.v1.SendValueResponse) {}
+
+  // An operation to search for Value operations either Obtain or Return that the Partner has requested of mica.
+  rpc SearchValue(value.v1.SearchValueRequest) returns (value.v1.SearchValueResponse) {}
+
+  rpc GetValue(value.v1.GetValueRequest) returns (value.v1.GetValueResponse) {}
+  //</editor-fold>
+
+  rpc SearchUserDiscount(discount.v1.SearchUserDiscountRequest) returns (discount.v1.SearchUserDiscountResponse) {}
+
+  //<editor-fold desc="Transaction Operations">
+
+  // Retrieve a receipt based on the transaction key.
+  rpc GetReceipt(micashared.common.v1.GetReceiptRequest) returns (micashared.common.v1.GetReceiptResponse) {}
+  //</editor-fold>
+
+  //<editor-fold desc="Admin Operations">
+
+  // An operation to ping the server to ensure it's up and running and that the connection is good.
+  rpc Ping(micashared.common.ping.v1.PingRequest) returns (micashared.common.ping.v1.PingResponse) {}
+  //</editor-fold>
+}
